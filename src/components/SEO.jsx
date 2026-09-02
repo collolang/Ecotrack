@@ -47,4 +47,3 @@ export default function SEO({ title, description, path = '/', noindex = false, j
     </Helmet>
   );
 }
-https://github.com/collolang/Eco-Frontend
