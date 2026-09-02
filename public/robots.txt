@@ -1,0 +1,13 @@
+# EcoTrack — robots.txt
+# https://www.robotstxt.org/robotstxt.html
+
+User-agent: *
+Allow: /
+Allow: /auth
+
+# Private, authenticated app area — no value indexing this, and it's
+# behind a login anyway, so keep crawlers out of it.
+Disallow: /dashboard
+Disallow: /dashboard/*
+
+Sitemap: https://eco-frontend-eight.vercel.app/sitemap.xml
