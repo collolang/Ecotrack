@@ -6,7 +6,7 @@
 import { Helmet } from 'react-helmet-async';
 
 const SITE_NAME = 'EcoTrack';
-const SITE_URL = 'https://eco-frontend-eight.vercel.app'; 
+const SITE_URL = 'https://ecotrack-nu-seven.vercel.app/'; 
 const DEFAULT_DESCRIPTION =
   'EcoTrack helps small and medium businesses monitor, measure, and reduce their environmental impact with real-time Scope 1, 2 & 3 emissions tracking.';
 const DEFAULT_IMAGE = `${SITE_URL}/og-image.png`;

@@ -10,4 +10,4 @@ Allow: /auth
 Disallow: /dashboard
 Disallow: /dashboard/*
 
-Sitemap: https://eco-frontend-eight.vercel.app/sitemap.xml
+Sitemap: https://ecotrack-nu-seven.vercel.app/sitemap.xml
