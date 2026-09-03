@@ -197,16 +197,17 @@ export default function Auth() {
   const handleRecoveryQuestions = async (e) => {
     e.preventDefault();
     setError('');
+    const normalizedEmail = forgotEmail.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(forgotEmail)) {
+    if (!emailRegex.test(normalizedEmail)) {
       toast.error('Please enter a valid email address.');
       setError('Please enter a valid email address.');
       return;
     }
     setLoading(true);
     try {
-      const data = await authApi.getSecurityQuestions(forgotEmail);
-      const rawQuestions = data.questions || data;
+      const data = await authApi.getSecurityQuestions(normalizedEmail);
+      const rawQuestions = data?.questions || data;
       const returnedQuestions = Array.isArray(rawQuestions) ? rawQuestions.map(item => item.question || item) : rawQuestions;
       if (!Array.isArray(returnedQuestions) || returnedQuestions.length !== 3) {
         setError('If this account exists, verify below. We could not start recovery right now.');
@@ -214,6 +215,7 @@ export default function Auth() {
       }
       setRecoveryQuestions(returnedQuestions);
       setRecoveryAnswers(returnedQuestions.map(() => ''));
+      setForgotEmail(normalizedEmail);
       setForgotStep(2);
     } catch (err) {
       const errorMsg = err.status === 404 || err.code === 'ACCOUNT_NOT_FOUND' || err.code === 'NO_SECURITY_QUESTIONS'
@@ -246,8 +248,11 @@ export default function Auth() {
     setLoading(true);
     try {
       await authApi.resetPasswordWithQuestions({
-        email: forgotEmail,
-        answers: recoveryQuestions.map((question, index) => ({ question, answer: recoveryAnswers[index] })),
+        email: forgotEmail.trim().toLowerCase(),
+        answers: recoveryQuestions.map((question, index) => ({
+          question,
+          answer: recoveryAnswers[index].trim(),
+        })),
         password: recoveryPassword,
       });
       setError('');
@@ -256,9 +261,12 @@ export default function Auth() {
       window.setTimeout(() => switchTab('login'), 3000);
     } catch (err) {
       const isCooldown = err.status === 429 || err.code === 'RECOVERY_COOLDOWN' || err.code === 'TOO_MANY_ATTEMPTS';
+      const isInvalidAnswers = err.code === 'INVALID_SECURITY_ANSWERS' || err.code === 'SECURITY_ANSWERS_MISMATCH';
       const errorMsg = isCooldown
         ? 'Too many failed attempts. Please try again later.'
-        : 'The answers could not be verified. Please check them and try again.';
+        : isInvalidAnswers
+          ? 'The answers do not match the security questions saved for this account.'
+          : err.message || 'The answers could not be verified. Please check them and try again.';
       toast.error(errorMsg);
       setError(errorMsg);
     } finally {
