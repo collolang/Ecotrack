@@ -253,7 +253,7 @@ export default function Auth() {
           question,
           answer: recoveryAnswers[index].trim(),
         })),
-        password: recoveryPassword,
+         newPassword: recoveryPassword,
       });
       setError('');
       toast.success('Password reset successful. Redirecting to login...');
