@@ -8,6 +8,7 @@ import Companies       from './Companies';
 import CompanyForm     from './CompanyForm';
 import DataEntry       from './DataEntry';
 import Reports         from './Reports';
+import AccountSettings from './AccountSettings';
 import { useCompany }  from '../context/CompanyContext';
 import SEO             from '../components/SEO';
 
@@ -57,6 +58,7 @@ export default function Dashboard() {
               <Route path="companies/:id"    element={<CompanyForm />} />
               <Route path="data"             element={<DataEntry />} />
               <Route path="reports"          element={<Reports />} />
+              <Route path="settings"         element={<AccountSettings />} />
             </Routes>
           </div>
         </main>

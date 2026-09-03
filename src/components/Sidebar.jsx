@@ -1,6 +1,6 @@
 // src/components/Sidebar.jsx
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Leaf, LayoutDashboard, Building2, Database, FileText, LogOut, X, Briefcase } from 'lucide-react';
+import { Leaf, LayoutDashboard, Database, FileText, LogOut, X, Briefcase, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCompany } from '../context/CompanyContext';
 import { useToast } from '../context/ToastContext';
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/dashboard/companies', label: 'My Companies',  icon: Briefcase },
   { to: '/dashboard/data',      label: 'Data Entry',    icon: Database },
   { to: '/dashboard/reports',   label: 'Reports',       icon: FileText },
+  { to: '/dashboard/settings',  label: 'Account Settings', icon: Settings },
 ];
 
 export default function Sidebar({ onClose }) {

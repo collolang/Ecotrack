@@ -45,7 +45,10 @@ const apiRequest = async (endpoint, options = {}, retry = true) => {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Request failed' }));
-    throw new Error(error.message || `HTTP error ${response.status}`);
+    const requestError = new Error(error.message || `HTTP error ${response.status}`);
+    requestError.status = response.status;
+    requestError.code = error.code;
+    throw requestError;
   }
 
   const data = await response.json();
@@ -73,11 +76,14 @@ export const authApi = {
     try { await apiRequest('/api/auth/logout', { method: 'POST', body: { refreshToken } }, false); }
     finally { tokenStorage.clearTokens(); }
   },
-  async forgotPassword(email) {
-    return apiRequest('/api/auth/forgot-password', { method: 'POST', body: { email } });
+  async getSecurityQuestions(email) {
+    return apiRequest('/api/auth/forgot-password/questions', { method: 'POST', body: { email } });
   },
-  async resetPassword(token, password) {
-    return apiRequest(`/api/auth/reset-password/${token}`, { method: 'POST', body: { password } });
+  async resetPasswordWithQuestions(data) {
+    return apiRequest('/api/auth/reset-password/questions', { method: 'POST', body: data });
+  },
+  async saveSecurityQuestions(questions) {
+    return apiRequest('/api/account/security-questions', { method: 'POST', body: { questions } });
   },
   async getMe() { return apiRequest('/api/auth/me'); },
 };

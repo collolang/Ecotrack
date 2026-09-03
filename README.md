@@ -123,43 +123,28 @@ JWT access tokens are stored in `localStorage` and automatically refreshed using
 ### 1. API Service Updates (`src/services/api.js`)
 **Added to `authApi` object:**
 ```javascript
-async forgotPassword(email) {
-  return apiRequest('/api/auth/forgot-password', { method: 'POST', body: { email } });
+async getSecurityQuestions(email) {
+  return apiRequest('/api/auth/forgot-password/questions', { method: 'POST', body: { email } });
 },
-async resetPassword(token, password) {
-  return apiRequest(`/api/auth/reset-password/${token}`, { method: 'POST', body: { password } });
+async resetPasswordWithQuestions(data) {
+  return apiRequest('/api/auth/reset-password/questions', { method: 'POST', body: data });
 },
 ```
 - Calls backend endpoints exactly as specified
 - Uses existing `apiRequest` helper with error handling and token refresh
 
 ### 2. Routing Updates (`src/App.jsx`)
-**Added routes:**
-```jsx
-<Route path="/forgot-password" element={<Navigate to="/auth?mode=forgot" replace />} />
-<Route path="/reset-password"  element={<Navigate to="/auth?mode=reset" replace />} />
-```
-- `/forgot-password` → `/auth?mode=forgot`
-- `/reset-password?token=ABC` → `/auth?mode=reset` (token preserved)
+Recovery is handled in the existing `/auth?mode=forgot` page; the old standalone email-reset routes were removed.
 
 ### 3. Auth Page Implementation (`src/pages/Auth.jsx`) - Main Feature
 **New Features Added:**
-- **4-tab responsive switcher**: Login | Register | Forgot | Reset (grid-cols-2 md:grid-cols-4)
-- **URL param handling**: `?mode=forgot/reset` auto-selects tab
+- **URL param handling**: `?mode=forgot` auto-selects the recovery tab
 - **Forgot Password tab (`tab === 'forgot'`)**:
   - Simple email input with Mail icon
-  - Submit → `authApi.forgotPassword(email)` 
-  - Success: Green toast + "Check inbox (15min)" message, form disabled
-  - Loading state, error handling
-  - "Back to Login" button
-- **Reset Password tab (`tab === 'reset'`)**:
-  - Token extracted from `?token=` param (validated, error if missing)
-  - Password + Confirm Password fields with eye toggle
-  - Full password strength indicator (reuse `validatePassword` - 5 rules with checkmarks)
-  - Validation: strength + match before submit
-  - Submit → `authApi.resetPassword(token, password)`
-  - Success: Toast + redirect to login
-  - Invalid token warning
+  - Submit → `authApi.getSecurityQuestions(email)`
+  - Renders three security questions, answers, and password reset fields
+  - Submit → `authApi.resetPasswordWithQuestions(data)`
+  - Generic account/answer errors and cooldown handling
 - **Login tab update**: "Forgot Password?" now button → `/auth?mode=forgot`
 - **UI Consistency**: Matches existing Tailwind design (leaf-600, rounded-xl, shadows, animations, responsive)
 - **Accessibility**: Labels, focus states, disabled states, ARIA-ready
@@ -169,11 +154,11 @@ Updated with ✅ checkboxes for all steps.
 
 ## Testing Instructions
 1. `npm run dev`
-2. **Forgot Password**: `/forgot-password` → Enter email → "Send Reset Link" → Success message
-3. **Reset Password**: `/reset-password?token=test123` → New password → Strength indicators → Submit → Success toast → Login page
+2. **Forgot Password**: `/auth?mode=forgot` → Enter email → answer security questions → reset password
 4. **Mobile**: Tabs stack 2-col on small screens
-5. **Error handling**: Invalid token, network errors → Toasts + error banners
+5. **Error handling**: Invalid answers, cooldown responses, and network errors → toasts + error banners
 
 ## Backend Dependencies
-✅ POST `/api/auth/forgot-password` {email}
-✅ POST `/api/auth/reset-password/:token` {password}
+✅ POST `/api/auth/forgot-password/questions` {email}
+✅ POST `/api/auth/reset-password/questions` {email, answers, password}
+✅ POST `/api/account/security-questions` {questions}
