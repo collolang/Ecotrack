@@ -7,6 +7,8 @@ import {
 import { Leaf, TrendingDown, TrendingUp, Target, Brain, Download, Zap, Building2, Plus } from 'lucide-react';
 import { emissionsApi } from '../services/api';
 import { useCompany }   from '../context/CompanyContext';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { useNavigate }  from 'react-router-dom';
 import { LoadingState, ErrorState, Card, Badge, ScoreBadge } from '../components/ui';
 
@@ -50,8 +52,12 @@ function NoCompany({ onAdd }) {
 
 export default function DashboardPanel() {
   const { activeCompany } = useCompany();
+  const { user } = useAuth();
   const navigate = useNavigate();
-const [state, setState] = useState({ loading: true, error: null, monthly: [], breakdown: [], yearly: [], total: 0, score: {}, prediction: null });
+  const toast = useToast();
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+  const [state, setState] = useState({ loading: true, error: null, monthly: [], breakdown: [], yearly: [], total: 0, score: {}, prediction: null });
 
   useEffect(() => {
     if (!activeCompany) { setState(s => ({ ...s, loading: false })); return; }
@@ -60,13 +66,11 @@ const [state, setState] = useState({ loading: true, error: null, monthly: [], br
       try {
         const results = await Promise.allSettled([
           emissionsApi.getMonthlyData(activeCompany.id),
-          emissionsApi.getBreakdownData(activeCompany.id),
+          emissionsApi.getBreakdownData(activeCompany.id, currentMonth, currentYear),
           emissionsApi.getYearlyComparison(activeCompany.id),
-          emissionsApi.getTotalEmissions(activeCompany.id),
-          emissionsApi.getScore(activeCompany.id, new Date().getMonth() + 1, new Date().getFullYear()),
-          // emissionsApi.getPrediction(activeCompany.id),
-          emissionsApi.getPrediction(activeCompany.id, new Date().getFullYear()),
-
+          emissionsApi.getTotalEmissions(activeCompany.id, currentMonth, currentYear),
+          emissionsApi.getScore(activeCompany.id, currentMonth, currentYear),
+          emissionsApi.getPrediction(activeCompany.id, currentYear),
         ]);
 
         const unwrap = (r, fallback) => (r.status === 'fulfilled' ? r.value : fallback);
@@ -83,7 +87,18 @@ const [state, setState] = useState({ loading: true, error: null, monthly: [], br
         setState(s => ({ ...s, loading: false, error: err.message }));
       }
     })();
-  }, [activeCompany?.id]);
+  }, [activeCompany?.id, currentMonth, currentYear]);
+
+  useEffect(() => {
+    if (!user?.email) return;
+    const key = `eco_security_questions_set:${user.email.trim().toLowerCase()}`;
+    if (localStorage.getItem(key) === 'true') return;
+    const reminderShown = sessionStorage.getItem(`eco_security_questions_reminder:${user.email.trim().toLowerCase()}`);
+    if (!reminderShown) {
+      toast.info('Set up your security questions in Account Settings to protect password recovery.');
+      sessionStorage.setItem(`eco_security_questions_reminder:${user.email.trim().toLowerCase()}`, 'true');
+    }
+  }, [user?.email, toast]);
 
   if (!activeCompany) return <NoCompany onAdd={() => navigate('/dashboard/companies/new')} />;
   if (state.loading)  return <LoadingState message="Loading dashboard data…" />;
@@ -120,7 +135,7 @@ const [state, setState] = useState({ loading: true, error: null, monthly: [], br
             <p className="text-leaf-100 text-xs font-bold uppercase tracking-wider">This Month</p>
             <Leaf className="w-5 h-5 text-leaf-200" />
           </div>
-          <p className="font-display text-3xl font-extrabold">{state.total}</p>
+          <p className="font-display text-3xl font-extrabold">{Number(state.total || 0).toFixed(1)}</p>
           <p className="text-leaf-100 text-xs mt-1">kg CO₂e total</p>
         </div>
 
@@ -146,7 +161,7 @@ const [state, setState] = useState({ loading: true, error: null, monthly: [], br
             <TrendingDown className="w-4 h-4 text-slate-300" />
           </div>
           <div>
-            <p className="font-display text-2xl font-extrabold text-slate-900">{gs.emissionsPerEmployee ?? '—'} kg</p>
+            <p className="font-display text-2xl font-extrabold text-slate-900">{gs.emissionsPerEmployee != null ? `${Number(gs.emissionsPerEmployee).toFixed(1)} kg` : '—'}</p>
             {pred && (
               <div className="flex items-center gap-1 mt-1">
                 {pred.trend === 'decreasing'
@@ -164,13 +179,14 @@ const [state, setState] = useState({ loading: true, error: null, monthly: [], br
             <Brain className="w-4 h-4 text-slate-300" />
           </div>
           <div>
-            <p className="font-display text-2xl font-extrabold text-slate-900">
-              {pred?.predictedEmissions ?? '—'}
-             
-            </p>
-            <p className="text-slate-500 text-xs mt-1">
-              {pred ? `${pred.confidence} confidence` : 'Need more data'}
-            </p>
+            {pred ? (
+              <>
+                <p className="font-display text-2xl font-extrabold text-slate-900">{pred.predictedEmissions ?? ''}</p>
+                <p className="text-slate-500 text-xs mt-1">{pred.confidence ? `${pred.confidence} confidence` : ''}</p>
+              </>
+            ) : (
+              <div className="h-12" />
+            )}
           </div>
         </Card>
       </div>
@@ -198,7 +214,7 @@ const [state, setState] = useState({ loading: true, error: null, monthly: [], br
 
         <Card className="lg:col-span-2">
           <h3 className="font-display font-bold text-slate-800 mb-4">Emission Breakdown</h3>
-          {state.breakdown.some(b => b.value > 0) ? (
+          {state.breakdown.some(b => Number(b.value || 0) > 0) ? (
             <>
               <ResponsiveContainer width="100%" height={160}>
                 <PieChart>
@@ -207,7 +223,7 @@ const [state, setState] = useState({ loading: true, error: null, monthly: [], br
                       <Cell key={i} fill={entry.color || SCOPE_COLORS[i % SCOPE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v, n) => [`${v?.toFixed(1)} kg`, n]} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
+                  <Tooltip formatter={(v, n) => [`${Number(v || 0).toFixed(1)} kg`, n]} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="space-y-2 mt-3">
@@ -217,7 +233,7 @@ const [state, setState] = useState({ loading: true, error: null, monthly: [], br
                       <div className="w-2.5 h-2.5 rounded-full" style={{ background: item.color || SCOPE_COLORS[i] }} />
                       <span className="text-slate-600 text-xs">{item.name}</span>
                     </div>
-                    <span className="font-bold text-slate-800 text-xs">{item.percentage}%</span>
+                    <span className="font-bold text-slate-800 text-xs">{item.percentage ?? 0}%</span>
                   </div>
                 ))}
               </div>

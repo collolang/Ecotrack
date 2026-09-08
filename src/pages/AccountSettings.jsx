@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CheckCircle, HelpCircle, Save } from 'lucide-react';
 import { authApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import SEO from '../components/SEO';
 
@@ -17,6 +18,7 @@ const emptyQuestions = Array.from({ length: 3 }, () => ({ question: '', answer: 
 
 export default function AccountSettings() {
   const toast = useToast();
+  const { user } = useAuth();
   const [questions, setQuestions] = useState(emptyQuestions);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -47,6 +49,11 @@ export default function AccountSettings() {
         question: item.question,
         answer: item.answer.trim(),
       })));
+      const emailKey = user?.email ? `eco_security_questions_set:${user.email.trim().toLowerCase()}` : 'eco_security_questions_set';
+      localStorage.setItem(emailKey, 'true');
+      if (user?.email) {
+        sessionStorage.removeItem(`eco_security_questions_reminder:${user.email.trim().toLowerCase()}`);
+      }
       setMessage('Your security questions have been saved.');
       toast.success('Security questions saved.');
     } catch (requestError) {

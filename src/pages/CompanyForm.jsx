@@ -64,6 +64,9 @@ export default function CompanyForm() {
       const val = e.target.value;
       setForm(p => ({ ...p, [field]: val }));
       setBusinessNameValid(validateBusinessName(val));
+    } else if (field === 'yearEstablished') {
+      const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+      setForm(p => ({ ...p, [field]: val }));
     } else {
       setForm(p => ({ ...p, [field]: e.target.value }));
     }
@@ -135,22 +138,22 @@ export default function CompanyForm() {
 
 
                 <div>
-                  <FieldLabel>Industry Type</FieldLabel>
-                  <Select value={form.industryType} onChange={set('industryType')}>
+                  <FieldLabel required>Industry Type</FieldLabel>
+                  <Select value={form.industryType} onChange={set('industryType')} required>
                     {INDUSTRY_TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
                   </Select>
                 </div>
                 <div>
-                  <FieldLabel>Registration Number</FieldLabel>
-                  <Input value={form.registrationNumber} onChange={set('registrationNumber')} placeholder="BN/2024/12345" />
+                  <FieldLabel required>Registration Number</FieldLabel>
+                  <Input value={form.registrationNumber} onChange={set('registrationNumber')} placeholder="BN/2024/12345" required />
                 </div>
                 <div>
-                  <FieldLabel>Year Established</FieldLabel>
-                  <Input value={form.yearEstablished} onChange={set('yearEstablished')} placeholder="2019" maxLength={4} />
+                  <FieldLabel required>Year Established</FieldLabel>
+                  <Input value={form.yearEstablished} onChange={set('yearEstablished')} placeholder="2019" maxLength={4} inputMode="numeric" required />
                 </div>
                 <div>
-                  <FieldLabel>Number of Employees</FieldLabel>
-                  <Input type="number" min="1" value={form.numberOfEmployees} onChange={set('numberOfEmployees')} />
+                  <FieldLabel required>Number of Employees</FieldLabel>
+                  <Input type="number" min="1" value={form.numberOfEmployees} onChange={set('numberOfEmployees')} required />
                 </div>
               </div>
             </div>
@@ -160,15 +163,15 @@ export default function CompanyForm() {
               <SectionTitle icon={MapPin}>Location &amp; Contact</SectionTitle>
               <div className="space-y-4">
                 <div>
-                  <FieldLabel>Location</FieldLabel>
-                  <Input value={form.location} onChange={set('location')} placeholder="Nairobi, Kenya" />
+                  <FieldLabel required>Location</FieldLabel>
+                  <Input value={form.location} onChange={set('location')} placeholder="Nairobi, Kenya" required />
                 </div>
                 <div>
-                  <FieldLabel>Contact Email</FieldLabel>
-                  <Input type="email" value={form.contactEmail} onChange={set('contactEmail')} placeholder="hello@company.com" />
+                  <FieldLabel required>Contact Email</FieldLabel>
+                  <Input type="email" value={form.contactEmail} onChange={set('contactEmail')} placeholder="hello@company.com" required />
                 </div>
                 <div>
-                  <FieldLabel>Contact Phone</FieldLabel>
+                  <FieldLabel required>Contact Phone</FieldLabel>
                   <Input
                     type="tel"
                     inputMode="numeric"
@@ -176,6 +179,7 @@ export default function CompanyForm() {
                     value={form.contactPhone}
                     onChange={setPhone}
                     placeholder="07XXXXXXXX"
+                    required
                     className={phoneError ? 'border-red-300 ring-red-200 bg-red-50 focus:ring-red-500' : ''}
                   />
                   {phoneError && <p className="text-xs text-red-500 mt-1">{phoneError}</p>}

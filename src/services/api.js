@@ -114,7 +114,12 @@ export const emissionsApi = {
     if (year)  p.append('year', year);
     return apiRequest(`/api/companies/${companyId}/emissions/breakdown${p.toString() ? `?${p}` : ''}`);
   },
-  async getTotalEmissions(companyId)   { return apiRequest(`/api/companies/${companyId}/emissions/total`); },
+  async getTotalEmissions(companyId, month, year) {
+    const p = new URLSearchParams();
+    if (month) p.append('month', month);
+    if (year) p.append('year', year);
+    return apiRequest(`/api/companies/${companyId}/emissions/total${p.toString() ? `?${p}` : ''}`);
+  },
   async getYearlyComparison(companyId) { return apiRequest(`/api/companies/${companyId}/emissions/yearly`); },
 
   async getScore(companyId, month, year) {
