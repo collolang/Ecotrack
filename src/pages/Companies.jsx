@@ -106,10 +106,6 @@ export default function Companies() {
                       <span>Est. {company.yearEstablished}</span>
                     </div>
                   )}
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
-                    <Globe className="w-3.5 h-3.5 shrink-0" />
-                    <span className="capitalize">{company.country?.replace(/([A-Z])/g, ' $1')}</span>
-                  </div>
                 </div>
 
                 {/* Actions */}

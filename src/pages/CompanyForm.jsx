@@ -13,23 +13,8 @@ const INDUSTRY_TYPES = [
   'FINANCIAL_SERVICES','CONSULTING','REAL_ESTATE','MEDIA','OTHER',
 ];
 
-const COUNTRIES = [
-  { value: 'kenya',       label: 'Kenya' },
-  { value: 'uganda',      label: 'Uganda' },
-  { value: 'tanzania',    label: 'Tanzania' },
-  { value: 'nigeria',     label: 'Nigeria' },
-  { value: 'southAfrica', label: 'South Africa' },
-  { value: 'ethiopia',    label: 'Ethiopia' },
-  { value: 'usa',         label: 'United States' },
-  { value: 'uk',          label: 'United Kingdom' },
-  { value: 'germany',     label: 'Germany' },
-  { value: 'india',       label: 'India' },
-  { value: 'china',       label: 'China' },
-  { value: 'global',      label: 'Global Average' },
-];
-
 const EMPTY = {
-  businessName: '', industryType: 'RETAIL', location: '', country: 'kenya',
+  businessName: '', industryType: 'RETAIL', location: '',
   numberOfEmployees: 1, registrationNumber: '', contactEmail: '',
   contactPhone: '', businessDescription: '', yearEstablished: '',
 };
@@ -46,6 +31,10 @@ export default function CompanyForm() {
   const [loading, setLoading] = useState(isEdit);
   const [saving,  setSaving]  = useState(false);
 
+  const KENYA_PHONE_REGEX = /^0[17]\d{8}$/;
+  const phoneError = form.contactPhone && !KENYA_PHONE_REGEX.test(form.contactPhone)
+    ? 'Enter a valid Kenyan number, e.g. 0712345678 or 0112345678'
+    : '';
 
   useEffect(() => {
     if (!isEdit) return;
@@ -80,11 +69,17 @@ export default function CompanyForm() {
     }
   };
 
+  const setPhone = (e) => {
+    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setForm(p => ({ ...p, contactPhone: digitsOnly }));
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.businessName.trim()) return toast.error('Business name is required.');
     if (!businessNameValid) return toast.error('Business name must only contain letters, spaces, hyphens, apostrophes and be at least 2 characters.');
+    if (phoneError) return toast.error('Please enter a valid Kenyan phone number.');
     setSaving(true);
     try {
       const payload = { ...form, numberOfEmployees: parseInt(form.numberOfEmployees) || 1 };
@@ -169,18 +164,21 @@ export default function CompanyForm() {
                   <Input value={form.location} onChange={set('location')} placeholder="Nairobi, Kenya" />
                 </div>
                 <div>
-                  <FieldLabel>Country</FieldLabel>
-                  <Select value={form.country} onChange={set('country')}>
-                    {COUNTRIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                  </Select>
-                </div>
-                <div>
                   <FieldLabel>Contact Email</FieldLabel>
                   <Input type="email" value={form.contactEmail} onChange={set('contactEmail')} placeholder="hello@company.com" />
                 </div>
                 <div>
                   <FieldLabel>Contact Phone</FieldLabel>
-                  <Input value={form.contactPhone} onChange={set('contactPhone')} placeholder="+254 700 000 000" />
+                  <Input
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={form.contactPhone}
+                    onChange={setPhone}
+                    placeholder="07XXXXXXXX"
+                    className={phoneError ? 'border-red-300 ring-red-200 bg-red-50 focus:ring-red-500' : ''}
+                  />
+                  {phoneError && <p className="text-xs text-red-500 mt-1">{phoneError}</p>}
                 </div>
               </div>
             </div>
@@ -199,11 +197,11 @@ export default function CompanyForm() {
           </div>
 
           <div className="bg-sky-50 border border-sky-200 rounded-xl px-4 py-3 text-sm text-sky-800">
-            <strong>💡 Why this matters:</strong> Your country determines the correct electricity emission factor for accurate carbon calculations.
+            Emissions are calculated using Kenya&apos;s national grid electricity factor.
           </div>
 
           <div className="flex gap-3">
-            <Btn type="submit" variant="primary" disabled={saving}>
+            <Btn type="submit" variant="primary" disabled={saving || Boolean(phoneError)}>
               <Save className="w-4 h-4" /> {saving ? 'Saving…' : isEdit ? 'Update Company' : 'Create Company'}
             </Btn>
             <Btn type="button" variant="secondary" onClick={() => navigate('/dashboard/companies')} disabled={saving}>

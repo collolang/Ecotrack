@@ -13,6 +13,10 @@ import {
 const MONTH_NAMES = ['','January','February','March','April','May','June',
                      'July','August','September','October','November','December'];
 const FUEL_TYPES  = ['DIESEL','PETROL','KEROSENE','LPG','LNG','CNG','WOOD','COAL'];
+const FUEL_UNITS  = {
+  PETROL: 'litres', DIESEL: 'litres', KEROSENE: 'litres', LPG: 'litres',
+  LNG: 'kg', CNG: 'kg', WOOD: 'kg', COAL: 'kg',
+};
 const WASTE_TYPES = ['LANDFILL','RECYCLED','COMPOSTED','INCINERATED','HAZARDOUS'];
 
 const EMPTY_FORM = {
@@ -97,13 +101,13 @@ export default function DataEntry() {
     setSaving(true);
     const payload = {
       month: parseInt(form.month), year: parseInt(form.year),
-      electricityKwh: form.electricityKwh ? parseFloat(form.electricityKwh) : undefined,
-      fuelType:       form.fuelQuantity    ? form.fuelType                   : undefined,
-      fuelQuantity:   form.fuelQuantity    ? parseFloat(form.fuelQuantity)   : undefined,
-      wasteKg:        form.wasteKg         ? parseFloat(form.wasteKg)        : undefined,
+      electricityKwh: form.electricityKwh !== '' ? parseFloat(form.electricityKwh) : null,
+      fuelType:       form.fuelQuantity   ? form.fuelType                  : null,
+      fuelQuantity:   form.fuelQuantity   !== '' ? parseFloat(form.fuelQuantity) : null,
+      wasteKg:        form.wasteKg        !== '' ? parseFloat(form.wasteKg)      : null,
       wasteType:      form.wasteType,
-      flightKm:       form.flightKm        ? parseFloat(form.flightKm)       : undefined,
-      notes:          form.notes || undefined,
+      flightKm:       form.flightKm       !== '' ? parseFloat(form.flightKm)     : null,
+      notes:          form.notes || null,
     };
     try {
       if (editingId) {
@@ -194,7 +198,7 @@ export default function DataEntry() {
             <ScopeBlock title="Scope 1 — Fuel &amp; Direct Emissions" color="#ef4444" icon={Fuel}>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <FieldLabel>Fuel Quantity (litres)</FieldLabel>
+                  <FieldLabel>Fuel Quantity ({FUEL_UNITS[form.fuelType] || 'litres'})</FieldLabel>
                   <Input type="number" min="0" step="any" value={form.fuelQuantity} onChange={set('fuelQuantity')} placeholder="e.g. 200" />
                 </div>
                 <div>

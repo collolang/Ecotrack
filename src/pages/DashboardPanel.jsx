@@ -63,7 +63,7 @@ const [state, setState] = useState({ loading: true, error: null, monthly: [], br
           emissionsApi.getBreakdownData(activeCompany.id),
           emissionsApi.getYearlyComparison(activeCompany.id),
           emissionsApi.getTotalEmissions(activeCompany.id),
-          emissionsApi.getScore(activeCompany.id),
+          emissionsApi.getScore(activeCompany.id, new Date().getMonth() + 1, new Date().getFullYear()),
           // emissionsApi.getPrediction(activeCompany.id),
           emissionsApi.getPrediction(activeCompany.id, new Date().getFullYear()),
 
@@ -105,7 +105,7 @@ const [state, setState] = useState({ loading: true, error: null, monthly: [], br
             {activeCompany.businessName}
           </h1>
           <p className="text-slate-500 mt-1 text-sm">
-            {activeCompany.industryType?.replace(/_/g, ' ')} · {activeCompany.location || activeCompany.country}
+            {activeCompany.industryType?.replace(/_/g, ' ')} · {activeCompany.location}
           </p>
         </div>
         <span className="hidden sm:block text-xs bg-leaf-50 border border-leaf-200 text-leaf-700 px-3 py-1.5 rounded-xl font-bold">
