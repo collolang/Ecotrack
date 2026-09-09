@@ -57,9 +57,7 @@ const apiRequest = async (endpoint, options = {}, retry = true) => {
 
 export const authApi = {
   async register(userData) {
-    const data = await apiRequest('/api/auth/register', { method: 'POST', body: userData });
-    tokenStorage.setTokens(data.accessToken, data.refreshToken);
-    return data;
+    return apiRequest('/api/auth/register', { method: 'POST', body: userData });
   },
   async login(email, password) {
     const data = await apiRequest('/api/auth/login', { method: 'POST', body: { email, password } });
@@ -82,10 +80,25 @@ export const authApi = {
   async resetPasswordWithQuestions(data) {
     return apiRequest('/api/auth/reset-password/questions', { method: 'POST', body: data });
   },
+  async verifyEmail(token) {
+    return apiRequest(`/api/auth/verify-email?token=${encodeURIComponent(String(token))}`);
+  },
+  async resendVerification(email) {
+    return apiRequest('/api/auth/resend-verification', { method: 'POST', body: { email } });
+  },
   async saveSecurityQuestions(questions) {
     return apiRequest('/api/account/security-questions', { method: 'POST', body: { questions } });
   },
   async getMe() { return apiRequest('/api/auth/me'); },
+};
+
+export const accountApi = {
+  async setupSecurityQuestions({ currentPassword, questions }) {
+    return apiRequest('/api/account/security-questions', {
+      method: 'POST',
+      body: { currentPassword, questions },
+    });
+  },
 };
 
 export const companyApi = {

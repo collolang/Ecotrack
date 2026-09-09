@@ -16,6 +16,8 @@ export default function Auth() {
   const [tab, setTab] = useState(mode === 'forgot' ? 'forgot' : (mode === 'register' ? 'register' : 'login'));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [registerSuccess, setRegisterSuccess] = useState(false);
+  const [resendVerificationError, setResendVerificationError] = useState('');
 
   // Login form
   const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -96,11 +98,12 @@ export default function Auth() {
 
   const switchTab = (t) => { 
     setTab(t); 
-    setError(''); 
+    setError('');
+    setResendVerificationError('');
     if (t !== 'forgot') setForgotStep(1);
     setRecoveryQuestions([]);
     setRecoveryAnswers([]);
-    setError('');
+    setRegisterSuccess(false);
   };
 
   useEffect(() => {
@@ -118,6 +121,29 @@ export default function Auth() {
     }
   }, [tab]);
 
+  async function handleResendVerification(emailOverride = loginData.email) {
+    const email = (emailOverride || '').trim().toLowerCase();
+    if (!email) {
+      setResendVerificationError('Please enter your email address to resend the verification link.');
+      return;
+    }
+    setLoading(true);
+    setResendVerificationError('');
+    try {
+      await authApi.resendVerification(email);
+      localStorage.setItem('eco_pending_verification_email', email);
+      toast.success('Verification email sent. Please check your inbox.');
+      setError('Verification email sent. Please check your inbox.');
+    } catch (err) {
+      const errorMsg = err.message || 'We could not resend the verification email. Please try again.';
+      setResendVerificationError(errorMsg);
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleLogin(e) {
     e.preventDefault();
     if (!loginAllValid) {
@@ -126,6 +152,7 @@ export default function Auth() {
       return;
     }
     setError('');
+    setResendVerificationError('');
     setLoading(true);
     try {
       await login(loginData.email, loginData.password);
@@ -143,6 +170,13 @@ export default function Auth() {
       toast.success('Welcome back! 🌿');
       navigate('/dashboard');
     } catch (err) {
+      if (err.code === 'EMAIL_NOT_VERIFIED') {
+        const errorMsg = 'Your email address has not been verified yet. Please check your inbox and verify your email, then try again.';
+        setError(errorMsg);
+        setResendVerificationError('');
+        toast.error(errorMsg);
+        return;
+      }
       const errorMsg = err.message || 'Login failed. Please try again.';
       toast.error(errorMsg);
       setError(errorMsg);
@@ -175,16 +209,20 @@ export default function Auth() {
       setError('Please accept the Terms & Conditions.');
       return;
     }
+    const cleanEmail = regData.email.trim().toLowerCase();
     setLoading(true);
     try {
       await register({
         firstName: regData.firstName,
         lastName: regData.lastName,
-        email: regData.email,
+        email: cleanEmail,
         password: regData.password,
       });
-      toast.success('Account created! Welcome to EcoTrack 🌿');
-      navigate('/dashboard');
+      localStorage.setItem('eco_pending_verification_email', cleanEmail);
+      setRegisterSuccess(true);
+      setError('');
+      setResendVerificationError('');
+      toast.success('Account created! Check your inbox to verify your email.');
     } catch (err) {
       const errorMsg = err.message || 'Registration failed. Please try again.';
       toast.error(errorMsg);
@@ -323,8 +361,38 @@ export default function Auth() {
             </div>
           )}
 
+          {tab === 'login' && error && (error.includes('verified yet') || error.includes('verify your email')) && (
+            <div className="mb-5">
+              <button
+                type="button"
+                onClick={() => handleResendVerification(loginData.email)}
+                className="w-full bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 rounded-xl px-4 py-3 font-semibold text-sm transition-colors"
+              >
+                Resend verification email
+              </button>
+              {resendVerificationError && (
+                <p className="mt-2 text-xs text-red-600">{resendVerificationError}</p>
+              )}
+            </div>
+          )}
+
+          {registerSuccess && (
+            <div className="text-center py-4">
+              <CheckCircle className="w-14 h-14 text-green-600 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Check your inbox to verify your email</h3>
+              <p className="text-sm text-slate-500 mb-5">We’ve sent a verification link to your email address.</p>
+              <button
+                type="button"
+                onClick={() => switchTab('login')}
+                className="w-full bg-leaf-600 hover:bg-leaf-700 text-white py-3 rounded-xl font-bold text-sm transition-all"
+              >
+                Back to login
+              </button>
+            </div>
+          )}
+
           {/* ── LOGIN ── */}
-          {tab === 'login' && (
+          {tab === 'login' && !registerSuccess && (
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Email</label>
@@ -416,7 +484,7 @@ export default function Auth() {
           )}
 
           {/* ── REGISTER ── */}
-          {tab === 'register' && (
+          {tab === 'register' && !registerSuccess && (
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>

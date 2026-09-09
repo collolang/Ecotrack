@@ -3,9 +3,10 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CompanyProvider } from './context/CompanyContext';
 import { ToastProvider } from './context/ToastContext';
-import Landing   from './pages/Landing';
-import Auth      from './pages/Auth';
-import Dashboard from './pages/Dashboard';
+import Landing     from './pages/Landing';
+import Auth        from './pages/Auth';
+import VerifyEmail from './pages/VerifyEmail';
+import Dashboard   from './pages/Dashboard';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -31,6 +32,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/"                element={<Landing />} />
       <Route path="/auth"            element={<GuestRoute><Auth /></GuestRoute>} />
+      <Route path="/verify-email"    element={<GuestRoute><VerifyEmail /></GuestRoute>} />
       <Route path="/dashboard/*"     element={
         <PrivateRoute>
           <CompanyProvider>

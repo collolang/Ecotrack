@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle, HelpCircle, Save } from 'lucide-react';
-import { authApi } from '../services/api';
+import { accountApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import SEO from '../components/SEO';
@@ -19,44 +19,62 @@ const emptyQuestions = Array.from({ length: 3 }, () => ({ question: '', answer: 
 export default function AccountSettings() {
   const toast = useToast();
   const { user } = useAuth();
-  const [questions, setQuestions] = useState(emptyQuestions);
+  const [form, setForm] = useState({ currentPassword: '', questions: emptyQuestions });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [currentPasswordError, setCurrentPasswordError] = useState('');
 
   function updateQuestion(index, field, value) {
-    setQuestions(current => current.map((item, itemIndex) => (
-      itemIndex === index ? { ...item, [field]: value } : item
-    )));
+    setForm(current => ({
+      ...current,
+      questions: current.questions.map((item, itemIndex) => (
+        itemIndex === index ? { ...item, [field]: value } : item
+      )),
+    }));
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
     setMessage('');
     setError('');
-    if (questions.some(item => !item.question || !item.answer.trim())) {
+    setCurrentPasswordError('');
+    if (!form.currentPassword.trim()) {
+      setCurrentPasswordError('Current password is required.');
+      return;
+    }
+    if (form.questions.some(item => !item.question || !item.answer.trim())) {
       setError('Choose a question and enter an answer for all three questions.');
       return;
     }
-    if (new Set(questions.map(item => item.question)).size !== 3) {
+    if (new Set(form.questions.map(item => item.question)).size !== 3) {
       setError('Please choose three different questions.');
       return;
     }
 
     setLoading(true);
     try {
-      await authApi.saveSecurityQuestions(questions.map(item => ({
-        question: item.question,
-        answer: item.answer.trim(),
-      })));
+      await accountApi.setupSecurityQuestions({
+        currentPassword: form.currentPassword,
+        questions: form.questions.map(item => ({
+          question: item.question,
+          answer: item.answer.trim(),
+        })),
+      });
       const emailKey = user?.email ? `eco_security_questions_set:${user.email.trim().toLowerCase()}` : 'eco_security_questions_set';
       localStorage.setItem(emailKey, 'true');
       if (user?.email) {
         sessionStorage.removeItem(`eco_security_questions_reminder:${user.email.trim().toLowerCase()}`);
       }
+      setForm(current => ({ ...current, currentPassword: '' }));
       setMessage('Your security questions have been saved.');
       toast.success('Security questions saved.');
     } catch (requestError) {
+      if (requestError.status === 401) {
+        setCurrentPasswordError('Incorrect password');
+        setForm(current => ({ ...current, currentPassword: '' }));
+        return;
+      }
       const errorMessage = requestError.message || 'Could not save your security questions.';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -89,12 +107,29 @@ export default function AccountSettings() {
         {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-5 text-sm">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {questions.map((item, index) => (
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Current Password</label>
+            <input
+              type="password"
+              required
+              value={form.currentPassword}
+              onChange={event => {
+                setForm(current => ({ ...current, currentPassword: event.target.value }));
+                if (currentPasswordError) setCurrentPasswordError('');
+              }}
+              placeholder="Enter your current password"
+              autoComplete="current-password"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-leaf-500"
+            />
+            {currentPasswordError && <p className="text-xs text-red-600">{currentPasswordError}</p>}
+          </div>
+
+          {form.questions.map((item, index) => (
             <div key={index} className="space-y-2">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Question {index + 1}</label>
               <select required value={item.question} onChange={event => updateQuestion(index, 'question', event.target.value)} className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-leaf-500">
                 <option value="">Select a question</option>
-                {SECURITY_QUESTIONS.map(question => <option key={question} value={question} disabled={questions.some((other, otherIndex) => otherIndex !== index && other.question === question)}>{question}</option>)}
+                {SECURITY_QUESTIONS.map(question => <option key={question} value={question} disabled={form.questions.some((other, otherIndex) => otherIndex !== index && other.question === question)}>{question}</option>)}
               </select>
               <input type="password" required value={item.answer} onChange={event => updateQuestion(index, 'answer', event.target.value)} placeholder="Your answer" autoComplete="off" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-leaf-500" />
             </div>
