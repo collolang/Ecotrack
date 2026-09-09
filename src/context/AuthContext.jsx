@@ -4,8 +4,19 @@ import { authApi, tokenStorage } from '../services/api';
 
 const AuthContext = createContext(null);
 
+function normalizeUser(payload) {
+  if (!payload) return null;
+  const nested = payload.user || payload;
+  const normalized = {
+    ...(nested || {}),
+    role: nested?.role || payload?.role || nested?.userRole || nested?.type || 'USER',
+  };
+  if (normalized.email === undefined && payload?.email) normalized.email = payload.email;
+  return normalized;
+}
+
 export function AuthProvider({ children }) {
-  const [user,    setUser]    = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,7 +25,7 @@ export function AuthProvider({ children }) {
       if (!tk) { setLoading(false); return; }
       try {
         const data = await authApi.getMe();
-        setUser(data.user || data);
+        setUser(normalizeUser(data));
       } catch {
         tokenStorage.clearTokens();
       } finally {
@@ -29,7 +40,8 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const data = await authApi.login(email, password);
-    setUser(data.user);
+    const nextUser = normalizeUser(data);
+    setUser(nextUser);
     return data;
   }, []);
 

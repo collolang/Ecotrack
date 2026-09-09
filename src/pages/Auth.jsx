@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { authApi } from '../services/api';
 import SEO from '../components/SEO';
+import { Input } from '../components/ui';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -35,10 +36,10 @@ export default function Auth() {
   const loginAllValid = Object.values(loginPasswordRules).every(Boolean);
 
   // Register form
-  const [regData, setRegData] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
+  const [regData, setRegData] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', adminInviteCode: '' });
   const [showRegPass, setShowRegPass] = useState(false);
   const [showRegConf, setShowRegConf] = useState(false);
-  const [termsAccepted, setTerms] = useState(false);
+  const [showInviteField, setShowInviteField] = useState(false);
   
   // Password strength validation for register
   const [passwordRules, setPasswordRules] = useState({
@@ -177,6 +178,12 @@ export default function Auth() {
         toast.error(errorMsg);
         return;
       }
+      if (err.code === 'ACCOUNT_SUSPENDED') {
+        const errorMsg = 'This account has been suspended. Contact support.';
+        setError(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
       const errorMsg = err.message || 'Login failed. Please try again.';
       toast.error(errorMsg);
       setError(errorMsg);
@@ -204,11 +211,6 @@ export default function Auth() {
       setError('Passwords do not match.');
       return;
     }
-    if (!termsAccepted) {
-      toast.error('Please accept the Terms & Conditions.');
-      setError('Please accept the Terms & Conditions.');
-      return;
-    }
     const cleanEmail = regData.email.trim().toLowerCase();
     setLoading(true);
     try {
@@ -217,6 +219,7 @@ export default function Auth() {
         lastName: regData.lastName,
         email: cleanEmail,
         password: regData.password,
+        adminInviteCode: regData.adminInviteCode || '',
       });
       localStorage.setItem('eco_pending_verification_email', cleanEmail);
       setRegisterSuccess(true);
@@ -616,11 +619,19 @@ export default function Auth() {
                 </div>
               </div>
               {/* --------------------------------------------------------------------------------------------- */}
-              <label className="flex items-start gap-2.5 text-sm cursor-pointer text-slate-600">
-                <input type="checkbox" checked={termsAccepted} onChange={e => setTerms(e.target.checked)} className="accent-leaf-600 w-4 h-4 mt-0.5 shrink-0" />
-                I agree to the{' '}
-                <a href="#" className="text-leaf-600 hover:text-leaf-700 font-semibold">Terms & Conditions</a>
-              </label>
+              {!showInviteField && (
+                <button type="button" onClick={() => setShowInviteField(true)} className="text-xs text-slate-400 hover:underline">
+                  Have an invite code?
+                </button>
+              )}
+              {showInviteField && (
+                <Input
+                  type="text"
+                  placeholder="Invite code"
+                  value={regData.adminInviteCode}
+                  onChange={e => setRegData(p => ({ ...p, adminInviteCode: e.target.value }))}
+                />
+              )}
               {/* ----------------------------------------------------------------------------------------------------------- */}
               <button
                 type="submit" disabled={!(nameRules.firstNameValid && nameRules.lastNameValid && allPasswordValid) || loading}

@@ -74,6 +74,23 @@ export default function Sidebar({ onClose }) {
             {label}
           </NavLink>
         ))}
+        {user?.role === 'ADMIN' && (
+          <NavLink
+            to="/admin/users"
+            end
+            onClick={onClose}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-6 py-4 sm:px-5 sm:py-3 text-base sm:text-sm font-semibold transition-all duration-150 border-r-4 ${
+                isActive
+                  ? 'bg-leaf-50 text-leaf-700 border-leaf-600'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800 border-transparent'
+              }`
+            }
+          >
+            <Settings className="w-[18px] h-[18px] shrink-0" />
+            Admin · Users
+          </NavLink>
+        )}
       </nav>
 
       {/* Active company badge */}

@@ -101,6 +101,20 @@ export const accountApi = {
   },
 };
 
+export const adminApi = {
+  listUsers: (params = {}) => {
+    const q = new URLSearchParams();
+    for (const [key, value] of Object.entries(params || {})) {
+      if (value !== undefined && value !== null && value !== '') q.append(key, String(value));
+    }
+    const suffix = q.toString() ? `?${q.toString()}` : '';
+    return apiRequest(`/api/admin/users${suffix}`);
+  },
+  suspendUser: (id) => apiRequest(`/api/admin/users/${id}/suspend`, { method: 'PATCH' }),
+  reactivateUser: (id) => apiRequest(`/api/admin/users/${id}/reactivate`, { method: 'PATCH' }),
+  deleteUser: (id) => apiRequest(`/api/admin/users/${id}`, { method: 'DELETE' }),
+};
+
 export const companyApi = {
   async list()           { return apiRequest('/api/companies'); },
   async get(id)          { return apiRequest(`/api/companies/${id}`); },
@@ -156,4 +170,4 @@ export const reportsApi = {
   },
 };
 
-export default { authApi, companyApi, emissionsApi, reportsApi };
+export default { authApi, companyApi, emissionsApi, reportsApi, accountApi, adminApi };

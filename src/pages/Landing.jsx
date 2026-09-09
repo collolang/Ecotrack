@@ -56,7 +56,7 @@ export default function Landing() {
             </h1>
             <p className="text-slate-600 text-lg leading-relaxed mb-8 max-w-lg">
               EcoTrack helps SMEs monitor, measure, and reduce their environmental impact.
-              Get real-time insights on Scope 1, 2 &amp; 3 emissions — all in one platform.
+              Get real-time insights on Scope 1, 2 &amp; 3 emissions,all in one platform.
             </p>
             <div className="flex flex-wrap gap-4">
               <button
